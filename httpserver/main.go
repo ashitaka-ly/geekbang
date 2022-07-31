@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/golang/glog"
 	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 func main() {
