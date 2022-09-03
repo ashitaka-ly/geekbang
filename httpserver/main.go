@@ -1,21 +1,54 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"github.com/golang/glog"
 	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
+
+	"github.com/golang/glog"
 )
 
 func main() {
+	// 日志等级
 	flag.Set("v", "4")
 	glog.V(2).Info("program starting")
 
+	// 利用 sigterm 信号关闭服务
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	// 构建并启动 http server
+	srv := buildWebServer()
+	go func() {
+		err := srv.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatalf("start http server failed, error: %s\n", err.Error())
+		}
+	}()
+	glog.V(2).Info("Server Starting")
+
+	<-signals
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// 停止 http server
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
+	log.Print("Server Shutdown")
+}
+
+// 构建 http server
+func buildWebServer() *http.Server {
 	mux := http.NewServeMux()
 	// 加入 debug 信息
 	mux.HandleFunc("/debug/pprof", pprof.Index)
@@ -23,14 +56,17 @@ func main() {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-	// 作业中 1 2 3
+	// root 基本业务
 	mux.HandleFunc("/", rootHandler)
-	// 4
+	// 探活
 	mux.HandleFunc("/healthz", healthzHandler)
-	err := http.ListenAndServe(":8080", mux)
-	if err != nil {
-		log.Fatal("start http server failed, error: %s\n", err.Error())
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
 	}
+
+	return srv
 }
 
 func rootHandler(w http.ResponseWriter, req *http.Request) {
