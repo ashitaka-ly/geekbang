@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -19,10 +18,8 @@ import (
 
 func main() {
 	// 日志等级
-	flag.Set("v", "4")
-	glog.V(2).Info("program starting")
-
-	// glog.V(0).Info("program starting")
+	flag.Set("v", "3")
+	glog.V(3).Info("program starting")
 
 	// 利用 sigterm 信号关闭服务
 	signals := make(chan os.Signal, 1)
@@ -36,7 +33,7 @@ func main() {
 			glog.Fatalf("start http server failed, error: %s\n", err.Error())
 		}
 	}()
-	glog.V(2).Info("Server Starting")
+	glog.V(3).Info("Server Starting")
 
 	<-signals
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -44,9 +41,9 @@ func main() {
 
 	// 停止 http server
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server Shutdown Failed:%+v", err)
+		glog.Fatalf("Server Shutdown Failed:%+v", err)
 	}
-	log.Print("Server Shutdown")
+	glog.V(3).Info("Server Shutdown")
 }
 
 // 构建 http server
@@ -87,7 +84,7 @@ func rootHandler(w http.ResponseWriter, req *http.Request) {
 
 	// 获取 IP 地址
 	clientIp := getIp(req)
-	log.Printf("Success! client ip %s", clientIp)
+	glog.V(3).Infof("Success! client ip %s", clientIp)
 
 	w.WriteHeader(200)
 	fmt.Fprintf(w, "SUCCESS")
@@ -115,4 +112,27 @@ func getIp(r *http.Request) string {
 func healthzHandler(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(200)
 	fmt.Fprintf(w, "running")
+}
+
+func LogFatal(format string, args ...interface{}) {
+	if args == nil {
+		glog.V(1).Infof("FATAL-"+format, args)
+	}
+	glog.V(1).Infof("FATAL-"+format, args)
+}
+
+func LogError(format string, args ...interface{}) {
+	glog.V(2).Info("ERROR-"+format, args)
+}
+
+func LogErrorf(format string, args ...interface{}) {
+	glog.V(2).Infof("ERROR-"+format, args)
+}
+
+func LogWarning(format string, args ...interface{}) {
+	glog.V(3).Infof("WARNING-"+format, args)
+}
+
+func LogInfo(format string, args ...interface{}) {
+	glog.V(4).Infof("INFO-"+format, args)
 }
