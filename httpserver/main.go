@@ -22,6 +22,8 @@ func main() {
 	flag.Set("v", "4")
 	glog.V(2).Info("program starting")
 
+	// glog.V(0).Info("program starting")
+
 	// 利用 sigterm 信号关闭服务
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
@@ -31,7 +33,7 @@ func main() {
 	go func() {
 		err := srv.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-			log.Fatalf("start http server failed, error: %s\n", err.Error())
+			glog.Fatalf("start http server failed, error: %s\n", err.Error())
 		}
 	}()
 	glog.V(2).Info("Server Starting")
