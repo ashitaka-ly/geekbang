@@ -20,7 +20,7 @@ FROM busybox
 COPY --from=builder /app/app /app/httpserver
 WORKDIR /app/
 EXPOSE 8080
-ENTRYPOINT [ "./httpserver" ]
+ENTRYPOINT ["./httpserver -v=3 -log_dir=/data/log" ]
 
 
 

@@ -17,8 +17,11 @@ import (
 )
 
 func main() {
+
 	// 日志等级
-	flag.Set("v", "3")
+	// flag.Set("v", "4")
+	flag.Parse()
+	defer glog.Flush()
 	glog.V(3).Info("program starting")
 
 	// 利用 sigterm 信号关闭服务
@@ -48,6 +51,7 @@ func main() {
 
 // 构建 http server
 func buildWebServer() *http.Server {
+	glog.V(4).Info("DEBUG msg")
 	mux := http.NewServeMux()
 	// 加入 debug 信息
 	mux.HandleFunc("/debug/pprof", pprof.Index)
