@@ -21,8 +21,5 @@ RUN mkdir -p /data/log
 COPY --from=builder /app/app /app/httpserver
 WORKDIR /app/
 EXPOSE 8080
-ENTRYPOINT ["./httpserver -v=3 -log_dir=/data/log" ]
-
-
-
+ENTRYPOINT ["./httpserver", "-v=3", "-log_dir=/data/log" ]
 

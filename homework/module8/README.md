@@ -5,7 +5,7 @@
 ### 导入镜像
 
 ```shell
-docker load < httpserver-0.3.tar
+docker load < httpserver-v0.3.tar
 ```
 
 ### 创建 configMap
