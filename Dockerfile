@@ -17,6 +17,7 @@ RUN go build -o app httpserver/main.go
 ## 把上阶段的 build 的 app 可执行应用，复制到容器指定位置
 ## 注意在 docker run 时要指定端口，-p 8080:8080, 否则本机不能直接访问
 FROM busybox
+RUN mkdir -p /data/log
 COPY --from=builder /app/app /app/httpserver
 WORKDIR /app/
 EXPOSE 8080
