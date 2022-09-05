@@ -10,11 +10,15 @@ docker load < httpserver-v0.3.tar
 
 ### 创建 configMap
 
+[configMap](config.yaml)
+
 ```shell
 kubectl create -f config.yaml
 ```
 
 ### 创建应用
+
+[httpserver](httpserver.yaml)
 
 ```shell
 kubectl create -f httpserver.yaml
