@@ -23,6 +23,7 @@ func main() {
 	flag.Parse()
 	defer glog.Flush()
 	glog.V(3).Info("program starting")
+	glog.V(4).Info("DEBUG LEVEL 4")
 
 	// 利用 sigterm 信号关闭服务
 	signals := make(chan os.Signal, 1)

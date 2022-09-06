@@ -5,7 +5,10 @@
 ### 导入镜像
 
 ```shell
-docker load < httpserver-v0.3.tar
+# docker 
+docker load < httpserver-v0.4.tar
+# containerd
+ctr -n k8s.io i httpserver-v0.4.tar
 ```
 
 ### 创建 configMap
@@ -25,7 +28,7 @@ kubectl create -f httpserver.yaml
 ```
 
 待完善
-- [ ] 使用configmap控制日志等级
+- [X] 使用configmap控制日志等级 —— 已实现
 - [ ] 优化日志文件的管理
 
 ## 作业内容
@@ -37,12 +40,15 @@ kubectl create -f httpserver.yaml
 
 ### 日志控制
 
-已经把日志级别控制移动到 flag，需要考虑容器控制
+~~已经把日志级别控制移动到 flag，需要考虑容器控制~~
+
+构建时使用环境变量控制  
+[dockerfile](../../Dockerfile)
 
 ### 生成镜像
 
 ```shell
-docker build . -t httpserver:0.3
+docker build . -t httpserver:0.4
 ```
 
 ### 组织 configMap
@@ -71,7 +77,7 @@ spec:
     spec:
       containers:
         - name: httpserver
-          image: httpserver:0.3
+          image: httpserver:0.4
           readinessProbe:
               failureThreshold: 3
               httpGet:
