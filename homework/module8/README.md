@@ -8,7 +8,7 @@
 # docker 
 docker load < httpserver-v0.4.tar
 # containerd
-ctr -n k8s.io i httpserver-v0.4.tar
+ctr -n k8s.io i import httpserver-v0.4.tar
 ```
 
 ### 创建 configMap

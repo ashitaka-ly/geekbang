@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - env:
-            - name: httpport
+            - name: LOG_LEVEL
               valueFrom:
                 configMapKeyRef:
                   name: myenv
