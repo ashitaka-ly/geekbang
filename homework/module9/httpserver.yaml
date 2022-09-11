@@ -1,0 +1,130 @@
+# create configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myenv
+data:
+  loglevel: "3"
+
+---
+# app
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: httpserver
+  name: httpserver
+spec:
+  # deployment 中的截至时间参数，超出时间将添加 ProgressDeadlineExceeded 到 .status.conditions 中
+  progressDeadlineSeconds: 600
+  replicas: 3
+  # 保留 10 个 deployment 旧版本
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: httpserver
+  # 部署策略：滚动部署
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: httpserver
+    spec:
+      containers:
+        - env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: myenv
+                  key: loglevel
+          # 使用本地导入的镜像
+          image: httpserver:0.5
+          imagePullPolicy: IfNotPresent
+          # 探活策略
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: httpserver
+          # 优雅启动
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          # 资源配置
+          resources:
+            limits:
+              cpu: 100m
+              memory: 50Mi
+            requests:
+              cpu: 20m
+              memory: 20Mi
+          # 容器异常终止的消息路径
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      # 与配置的集群域后缀不匹配的任何 DNS 查询都将转发到从节点继承的上游DNS服务器
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      # 使用默认调度器
+      schedulerName: default-scheduler
+      # 容器安全配置上下文
+      securityContext: {}
+      # 终止等待时间，即给 pod 发送 sigterm 后的等待时间
+      terminationGracePeriodSeconds: 30
+
+---
+# create service
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpserver-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: httpserver
+
+---
+# create ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gateway
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+    - hosts:
+        - cncamp.com
+      secretName: cncamp-tls
+  rules:
+    - host: cncamp.com
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: httpserver-service
+                port:
+                  number: 8080

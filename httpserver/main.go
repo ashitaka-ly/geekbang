@@ -62,6 +62,7 @@ func buildWebServer() *http.Server {
 
 	// root 基本业务
 	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/now", timeHandler)
 	// 探活
 	mux.HandleFunc("/healthz", healthzHandler)
 
@@ -93,6 +94,17 @@ func rootHandler(w http.ResponseWriter, req *http.Request) {
 
 	w.WriteHeader(200)
 	fmt.Fprintf(w, "SUCCESS")
+}
+
+func timeHandler(w http.ResponseWriter, req *http.Request) {
+	now := time.Now()      //获取当前时间
+	year := now.Year()     //年
+	month := now.Month()   //月
+	day := now.Day()       //日
+	hour := now.Hour()     //小时
+	minute := now.Minute() //分钟
+	second := now.Second() //秒
+	fmt.Fprintf(w, "time is [%d-%02d-%02d %02d:%02d:%02d]", year, month, day, hour, minute, second)
 }
 
 // 获取 IP 地址
