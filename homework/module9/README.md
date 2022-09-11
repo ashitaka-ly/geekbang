@@ -6,9 +6,9 @@
 
 ```shell
 # docker 
-docker load < httpserver-v0.4.tar
+docker load < httpserver-v0.5.tar
 # containerd
-ctr -n k8s.io i import httpserver-v0.4.tar
+ctr -n k8s.io i import httpserver-v0.5.tar
 ```
 
 ### 创建应用
