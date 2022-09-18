@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -14,6 +15,9 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/ashitaka/geekbang/httpserver/metrics"
 )
 
 func main() {
@@ -24,6 +28,8 @@ func main() {
 	defer glog.Flush()
 	glog.V(3).Info("program starting")
 	glog.V(4).Info("DEBUG LEVEL 4")
+
+	metrics.Register()
 
 	// 利用 sigterm 信号关闭服务
 	signals := make(chan os.Signal, 1)
@@ -61,8 +67,11 @@ func buildWebServer() *http.Server {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	// root 基本业务
-	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/root", rootHandler)
 	mux.HandleFunc("/now", timeHandler)
+	// 暴露给 prometheus
+	mux.Handle("/metrics", promhttp.Handler())
+	mux.HandleFunc("/hello", helloHandler)
 	// 探活
 	mux.HandleFunc("/healthz", healthzHandler)
 
@@ -107,6 +116,21 @@ func timeHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "time is [%d-%02d-%02d %02d:%02d:%02d]", year, month, day, hour, minute, second)
 }
 
+func helloHandler(w http.ResponseWriter, req *http.Request) {
+	glog.V(3).Infoln("entering hello")
+	et := metrics.NewTimer()
+	defer et.ObserveTotal()
+	delay := randInt(20, 2000)
+	time.Sleep(time.Millisecond * time.Duration(delay))
+	glog.V(3).Infof("delay = %d", delay)
+	fmt.Fprintf(w, "delay = %d", delay)
+}
+
+func randInt(min int, max int) int {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return min + rand.Intn(max-min)
+}
+
 // 获取 IP 地址
 func getIp(r *http.Request) string {
 	xForwardedFor := r.Header.Get("X-Forwarded-For")
@@ -129,27 +153,4 @@ func getIp(r *http.Request) string {
 func healthzHandler(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(200)
 	fmt.Fprintf(w, "running")
-}
-
-func LogFatal(format string, args ...interface{}) {
-	if args == nil {
-		glog.V(1).Infof("FATAL-"+format, args)
-	}
-	glog.V(1).Infof("FATAL-"+format, args)
-}
-
-func LogError(format string, args ...interface{}) {
-	glog.V(2).Info("ERROR-"+format, args)
-}
-
-func LogErrorf(format string, args ...interface{}) {
-	glog.V(2).Infof("ERROR-"+format, args)
-}
-
-func LogWarning(format string, args ...interface{}) {
-	glog.V(3).Infof("WARNING-"+format, args)
-}
-
-func LogInfo(format string, args ...interface{}) {
-	glog.V(4).Infof("INFO-"+format, args)
 }
