@@ -76,7 +76,7 @@ func buildWebServer() *http.Server {
 	mux.HandleFunc("/healthz", healthzHandler)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":80",
 		Handler: mux,
 	}
 
