@@ -1,0 +1,103 @@
+# create configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myenv
+data:
+  loglevel: "3"
+
+---
+# create service
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpserver-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: httpserver
+
+---
+# create ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gateway
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+    - hosts:
+        - cncamp.com
+      secretName: cncamp-tls
+  rules:
+    - host: cncamp.com
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: httpserver-service
+                port:
+                  number: 80
+
+---
+# httpserver app
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: httpserver
+  name: httpserver
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: httpserver
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+      creationTimestamp: null
+      labels:
+        app: httpserver
+    spec:
+      containers:
+        - name: httpserver
+          image: core.harbor.domain/library/httpserver-metrics:0.6
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              hostPort: 80
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: myenv
+                  key: loglevel
+          resources:
+            limits:
+              cpu: 100m
+              memory: 50Mi
+            requests:
+              cpu: 20m
+              memory: 20Mi
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+

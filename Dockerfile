@@ -22,5 +22,5 @@ COPY --from=builder /app/app /app/httpserver
 WORKDIR /app/
 EXPOSE 80
 # 注意要用 exec 模式，保证 pid 为1，并且需要执行 shell 否则不能获取环境变量
-ENTRYPOINT ["/bin/sh","-c","./httpserver -v=${LOG_LEVEL} -alsologtostderr"]
+ENTRYPOINT ["/bin/sh","-c","./httpserver -v=${LOG_LEVEL} -log_dir=/data/log -alsologtostderr"]
 
